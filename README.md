@@ -45,6 +45,8 @@ The hosted hackathon preview already has its managed database and migrations app
 
 The template expects its configured OAuth/runtime values (see `environment.template` and `server/_core/env.ts`). To log into `/staff` outside the hosted Manus preview, configure an OAuth application and the correct callback URL for your local or tunnel URL. The staff login card is part of CareQueue; the browser briefly visits the official provider sign-in screen because Google passwords cannot safely be embedded in another site, then returns to the same `/staff` route in the same tab. The one-time login state is valid for 30 minutes to allow provider login/MFA. The patient check-in and display routes are public; staff mutation/query routes remain authenticated.
 
+For Vercel hosting, see [VERCEL-DEPLOY.md](VERCEL-DEPLOY.md). The project requires a separate MySQL-compatible database and OAuth callback configuration; those services and secrets are not included in the GitHub repository.
+
 ### Twilio configuration
 
 Set the following server-only environment variables:

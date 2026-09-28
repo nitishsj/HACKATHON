@@ -48,6 +48,10 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
+  // Vercel serves the generated root public/ directory from its CDN, and the
+  // vercel.json rewrites the SPA routes to /; Express must handle API requests.
+  if (process.env.VERCEL) return;
+
   const distPath =
     process.env.NODE_ENV === "development"
       ? path.resolve(import.meta.dirname, "../..", "dist", "public")
