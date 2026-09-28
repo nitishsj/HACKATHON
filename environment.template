@@ -3,6 +3,13 @@
 
 # Database / app auth. Use credentials for your own local environment.
 DATABASE_URL=mysql://user:password@localhost:3306/carequeue
+# Alternatively, use the TIDB_* values injected by the Vercel TiDB integration.
+# The application enables TLS automatically for this connection mode.
+TIDB_HOST=
+TIDB_PORT=4000
+TIDB_USER=
+TIDB_PASSWORD=
+TIDB_DATABASE=
 JWT_SECRET=replace-with-a-random-secret-at-least-32-characters
 VITE_APP_ID=your-manus-app-id
 OAUTH_SERVER_URL=https://api.manus.im

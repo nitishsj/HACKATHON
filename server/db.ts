@@ -1,15 +1,20 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { getDatabaseConfig } from "./databaseConfig";
+import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  const config = !_db ? getDatabaseConfig() : undefined;
+  if (!_db && config) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _db =
+        config.kind === "url"
+          ? drizzle(config.url)
+          : drizzle({ connection: config.poolOptions });
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;

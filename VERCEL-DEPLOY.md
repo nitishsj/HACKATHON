@@ -1,80 +1,90 @@
-# Deploy CareQueue to Vercel
+# Fast Vercel deployment (with TiDB Marketplace)
 
-## 1. Import the GitHub project
+The CareQueue code uses MySQL. Vercel itself does not include a MySQL server, so use the **TiDB Cloud Marketplace integration**. It can create/connect a MySQL-compatible TiDB cluster from the Vercel workflow and inject its connection fields into the project. The app and Drizzle migration config are set up to read those fields and require TLS.
 
-In Vercel, select **Add New → Project**, import `nitishsj/HACKATHON`, and use:
+## 1. Import the GitHub repo
 
-| Vercel field | Value |
+In Vercel choose **Add New → Project** and import `nitishsj/HACKATHON`, branch `main`.
+
+| Field | Value |
 |---|---|
-| Project Name | `hackathon` (or your preferred available name) |
+| Project Name | `hackathon` (if available) |
 | Framework Preset | **Express** |
 | Root Directory | `./` |
-| Build Command | `pnpm build` |
-| Output Directory | Leave the override off / default. The build creates root `public/` for Vercel's static CDN. |
-| Install Command | Automatic pnpm detection, or `pnpm install --frozen-lockfile` |
-| Node.js Version | 22.x |
+| Build Command (first deploy only) | `pnpm build` |
+| Output Directory | Leave override off (`N/A`) |
+| Install Command | `pnpm install --frozen-lockfile` or Vercel's detected pnpm command |
 
-If Vercel still shows **Other**, refresh/re-import after the root `index.ts` commit has reached GitHub. Do not deploy it as a static-only site: the tRPC, OAuth, and Twilio endpoints need the Express Function.
+If the Environment Variables section contains a row with key `hackathon`, remove it: that's a project name, not an environment variable. Do not add a blank or placeholder `DATABASE_URL` for the TiDB path.
 
-## 2. Create a separate MySQL-compatible database
-
-Vercel does not automatically provide the MySQL database used by this app. Create a MySQL/TiDB-compatible database reachable from Vercel and keep its connection URI private. The currently hosted Manus database and seeded rows do not move with the Git repository.
-
-Before the first staff login, apply the committed migrations using your database URL from your own machine. In PowerShell, from the project root:
-
-```powershell
-$env:DATABASE_URL = "<your-private-mysql-compatible-connection-string>"
-pnpm install
-pnpm drizzle-kit migrate
-Remove-Item Env:DATABASE_URL
-```
-
-Do not commit the URI or paste it into chat. After deployment, the staff console's protected **Load demo patients** control creates the mock demo records in this new database.
-
-## 3. Add Vercel environment variables
-
-Open **Project → Settings → Environment Variables** and add the variables below to **Production** and **Preview** as needed. Vercel applies changes only to new deployments, so redeploy after editing values.
-
-Required for the app:
+Add these app/auth values before the first deployment:
 
 | Key | Value |
 |---|---|
-| `DATABASE_URL` | The private MySQL/TiDB-compatible connection URI from step 2 |
-| `JWT_SECRET` | A fresh random secret of at least 32 characters; do not reuse a public/demo value |
-| `VITE_APP_ID` | The App ID from the OAuth application configured for this app |
+| `JWT_SECRET` | A new random value of at least 32 characters |
+| `VITE_APP_ID` | Your OAuth application's App ID |
 | `OAUTH_SERVER_URL` | `https://api.manus.im` |
 | `VITE_OAUTH_PORTAL_URL` | `https://manus.im` |
-| `OWNER_OPEN_ID` | Your authorized account's OAuth open ID (recommended to assign owner/admin role) |
+| `OWNER_OPEN_ID` | Your authorized OAuth open ID (recommended; optional if owner-role promotion is unnecessary) |
 
-`OWNER_OPEN_ID` may be left blank if owner/admin role promotion is not needed. `NODE_ENV` and `PORT` are provided by Vercel; do not add them manually. Manus Forge variables in `environment.template` are optional and not needed for the current queue, staff, display, and SMS flows.
+Choose **Production** for these variables. Then click **Deploy**. The first deploy creates the Vercel project; database-backed pages will not be usable until you connect TiDB in the next step.
 
-## 4. Deploy once, then set callback URLs
+## 2. Create/connect TiDB from the Vercel dashboard
 
-After the first successful deployment, copy the exact production domain Vercel gives you (it may not be `hackathon.vercel.app`). In your OAuth application's allowed callback/redirect URLs, add:
+1. Open the new Vercel project and go to **Integrations / Marketplace**.
+2. Find **TiDB Cloud** and click **Add Integration**.
+3. Select your Vercel team and the `hackathon` project, approve the integration, and continue to TiDB Cloud.
+4. In the TiDB setup, select the same Vercel project, your TiDB organization/project, and **Cluster** as the connection type.
+5. If there is no cluster, use **Create Cluster** to create a TiDB Cloud Starter instance. Use **Create Database** if needed.
+6. Choose **General** for the framework/variable format (not Prisma or TiDB Serverless Driver). Connect the resource to **Production**. Enable TiDB branching if you also want isolated Preview databases.
+7. Finish **Add Integration**, return to Vercel, then check **Project → Settings → Environment Variables**. TiDB should have added:
+   - `TIDB_HOST`
+   - `TIDB_PORT`
+   - `TIDB_USER`
+   - `TIDB_PASSWORD`
+   - `TIDB_DATABASE`
+
+Don't copy these secrets into source code or chat. The app creates a verified-TLS MySQL pool from these variables; you don't need to compose a connection URL by hand. The marketplace connection steps are documented by [TiDB](https://docs.pingcap.com/tidbcloud/integrate-tidbcloud-with-vercel/).
+
+## 3. Apply the existing schema migrations
+
+After TiDB variables are present, go to **Project → Settings → Build & Development Settings** and change the Build Command to:
 
 ```text
-https://<your-production-domain>/api/oauth/callback
+pnpm drizzle-kit migrate && pnpm build
 ```
 
-Then add the following server-only Twilio variables in Vercel. Select **Production** (and Preview only if you intend to test SMS from preview deployments):
+Save, then redeploy Production. Drizzle Kit reads the injected `TIDB_*` fields and applies the committed MySQL-compatible migrations before building the app. Don't use `drizzle-kit generate` during deployment.
+
+For Preview deployments, only connect a separate TiDB branch or database if you enabled TiDB branching. Otherwise leave TiDB connected to Production only, so a Preview cannot migrate/use the production database unexpectedly.
+
+## 4. Add Twilio after the production domain exists
+
+Open **Project → Settings → Environment Variables** and add these server-only variables to Production (never use a `VITE_` prefix):
 
 | Key | Value |
 |---|---|
 | `TWILIO_ACCOUNT_SID` | Your Twilio Account SID |
 | `TWILIO_API_KEY` | Your Twilio API Key SID |
-| `TWILIO_API_SECRET` | The matching Twilio API Key Secret |
+| `TWILIO_API_SECRET` | The matching API Key Secret |
 | `TWILIO_FROM_NUMBER` | Your Twilio sender number in E.164 format |
-| `TWILIO_AUTH_TOKEN` | Twilio Account Auth Token (used to verify callbacks) |
+| `TWILIO_AUTH_TOKEN` | Twilio Account Auth Token |
 | `TWILIO_STATUS_CALLBACK_URL` | `https://<your-production-domain>/api/twilio/status` |
 
-Keep every Twilio key server-only; never name one with a `VITE_` prefix. Redeploy after saving the variables. Twilio trial accounts may only send to verified recipients; carrier SMS can incur charges. The app sends only after a patient explicitly opts in.
+Also allow this OAuth callback in your OAuth application:
 
-## 5. Verify the deployed app
+```text
+https://<your-production-domain>/api/oauth/callback
+```
 
-1. Open `/` and submit a check-in; the patient should receive a private ticket page.
-2. Open `/staff`, sign in, and load demo patients to seed the new database.
-3. Open `/display` and verify that only tokens are shown.
-4. In staff, confirm the dashboard loads and prints a working QR.
-5. Test one SMS only with an explicitly opted-in, Twilio-permitted test number; follow its delivery badge and status callback.
+Save the variables and redeploy. Twilio trial accounts may send only to verified recipients; carrier SMS can incur charges. The app sends only after patient opt-in.
 
-If the UI loads but API requests fail, first verify `DATABASE_URL`, OAuth settings, and that the project uses the **Express** preset rather than static-only **Other**.
+## 5. Seed and verify the demo
+
+1. Visit the Vercel site and open `/staff`; sign in.
+2. Click **Load demo patients** to seed the new TiDB database.
+3. Open `/display` to show the token-only waiting-room board.
+4. Print the QR from Staff and scan it with a phone to open patient check-in.
+5. Test one SMS using an explicitly opted-in, Twilio-permitted test number.
+
+Render's managed Postgres is not interchangeable with this MySQL schema. The above TiDB path keeps the app's existing MySQL driver and table migrations.
