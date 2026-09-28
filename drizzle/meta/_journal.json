@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1790579901474,
+      "tag": "0000_secret_captain_britain",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1790580125780,
+      "tag": "0001_lonely_toxin",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1790582231780,
+      "tag": "0002_fast_namor",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1790584358555,
+      "tag": "0003_hesitant_kat_farrell",
+      "breakpoints": true
+    }
+  ]
+}

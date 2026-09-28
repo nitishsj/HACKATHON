@@ -1,0 +1,25 @@
+# Copy this file to .env on your own machine, then replace placeholders locally.
+# Do not commit the resulting .env file.
+
+# Database / app auth. Use credentials for your own local environment.
+DATABASE_URL=mysql://user:password@localhost:3306/carequeue
+JWT_SECRET=replace-with-a-random-secret-at-least-32-characters
+VITE_APP_ID=your-manus-app-id
+OAUTH_SERVER_URL=https://api.manus.im
+VITE_OAUTH_PORTAL_URL=https://manus.im
+OWNER_OPEN_ID=your-authorized-owner-open-id
+OWNER_NAME=Clinic Demo Owner
+
+# Optional Manus Forge server/client values if app features need them.
+BUILT_IN_FORGE_API_URL=
+BUILT_IN_FORGE_API_KEY=
+VITE_FRONTEND_FORGE_API_URL=
+VITE_FRONTEND_FORGE_API_KEY=
+
+# Twilio SMS secrets (server-only; do not add a VITE_ prefix).
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_API_KEY=SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_API_SECRET=replace-with-api-key-secret
+TWILIO_FROM_NUMBER=+10000000000
+TWILIO_AUTH_TOKEN=replace-with-account-auth-token
+TWILIO_STATUS_CALLBACK_URL=https://your-public-host.example/api/twilio/status
