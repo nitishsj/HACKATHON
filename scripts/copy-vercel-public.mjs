@@ -14,4 +14,7 @@ try {
 await fs.rm(destination, { recursive: true, force: true });
 await fs.mkdir(destination, { recursive: true });
 await fs.cp(source, destination, { recursive: true });
-console.log("Copied Vite assets into Vercel's public/ directory.");
+for (const routeFile of ["staff.html", "display.html", "404.html"]) {
+  await fs.copyFile(path.join(source, "index.html"), path.join(destination, routeFile));
+}
+console.log("Copied Vite assets and SPA route entrypoints into Vercel's public/ directory.");
