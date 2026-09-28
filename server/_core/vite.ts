@@ -3,10 +3,15 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
-import { createServer as createViteServer } from "vite";
-import viteConfig from "../../vite.config";
 
 export async function setupVite(app: Express, server: Server) {
+  // Keep Vite and its config out of the production/serverless startup graph.
+  // Vercel's function bundler may transform ESM metadata, while vite.config.ts
+  // relies on import.meta.dirname during module evaluation.
+  const [{ createServer: createViteServer }, { default: viteConfig }] = await Promise.all([
+    import("vite"),
+    import("../../vite.config"),
+  ]);
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
